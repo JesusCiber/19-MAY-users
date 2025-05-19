@@ -1,8 +1,10 @@
 package com.ironhack.users_micro.controller;
 
+import com.ironhack.users_micro.dto.UserAccountDTO;
 import com.ironhack.users_micro.dto.UserPatchAccountDTO;
 import com.ironhack.users_micro.exception.UserNotFoundException;
 import com.ironhack.users_micro.model.User;
+import com.ironhack.users_micro.service.AccountService;
 import com.ironhack.users_micro.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,9 +16,11 @@ import java.util.List;
 @RequestMapping("/api/user")
 public class UserController {
     private final UserService userService;
+    private final AccountService accountService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, AccountService accountService) {
         this.userService = userService;
+        this.accountService = accountService;
     }
 
     @GetMapping
@@ -24,11 +28,28 @@ public class UserController {
         return userService.getAllUsers();
     }
 
-    @GetMapping("/{id}")
+    /*@GetMapping("/{id}")
     public ResponseEntity<?> getUserById(@PathVariable long id) {
         try {
             User foundUser = userService.getUserById(id);
             return new ResponseEntity<>(foundUser, HttpStatus.FOUND);
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+        }
+    }*/
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable long id) {
+        try {
+            User foundUser = userService.getUserById(id);
+            UserAccountDTO account = accountService.getAccountByOwnerId(foundUser.getAccountID());
+            UserAccountDTO response = new UserAccountDTO(
+                    account.getId(),
+                    account.getOwnerId(),
+                    account.getIsbn(),
+                    account.getBalance()
+            );
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
         }
